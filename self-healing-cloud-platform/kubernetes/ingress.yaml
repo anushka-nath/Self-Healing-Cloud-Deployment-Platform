@@ -1,0 +1,23 @@
+---
+# Ingress routes external HTTP traffic to the backend service.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: self-healing-api-ingress
+  namespace: self-healing-platform
+  annotations:
+    # Explicit ingress class annotation for broad compatibility.
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  ingressClassName: nginx
+  rules:
+    # Host is intentionally omitted for localhost-friendly testing.
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: self-healing-api-service
+                port:
+                  number: 80

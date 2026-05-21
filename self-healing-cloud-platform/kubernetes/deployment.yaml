@@ -1,0 +1,71 @@
+---
+# Deployment for Self-Healing Cloud Deployment Platform backend service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: self-healing-api
+  namespace: self-healing-platform
+  labels:
+    app.kubernetes.io/name: self-healing-api
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: self-healing-cloud-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: self-healing-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: self-healing-api
+        app.kubernetes.io/component: backend
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: flask-api
+          image: self-healing-api:2.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+              name: http
+          env:
+            - name: APP_ENV
+              value: "kubernetes"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: PORT
+              value: "5000"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1
+          resources:
+            requests:
+              cpu: "120m"
+              memory: "192Mi"
+            limits:
+              cpu: "350m"
+              memory: "512Mi"
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]

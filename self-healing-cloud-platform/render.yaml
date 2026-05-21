@@ -1,0 +1,13 @@
+---
+services:
+  - type: web
+    name: self-healing-cloud-platform
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --chdir app app:app --workers 2 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: APP_ENV
+        value: render
+      - key: LOG_LEVEL
+        value: INFO

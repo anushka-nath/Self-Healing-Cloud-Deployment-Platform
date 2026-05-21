@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Self-Healing Deployment Control Center</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-badge">SH</div>
+          <div>
+            <h1>Self-Healing</h1>
+            <p>Deployment Control Center</p>
+          </div>
+        </div>
+        <nav class="side-nav">
+          <a href="#dashboard" class="active">Dashboard</a>
+          <a href="#deployments">Deployments</a>
+          <a href="#kubernetes">Kubernetes</a>
+          <a href="#monitoring">Monitoring</a>
+          <a href="#infrastructure">Infrastructure</a>
+          <a href="#cicd">CI/CD</a>
+          <a href="#logs">Logs</a>
+          <a href="#settings">Settings</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div class="topbar-left">
+            <h2>Cloud Deployment Operations</h2>
+            <span class="subtext">Production simulation environment</span>
+          </div>
+          <div class="topbar-right">
+            <div class="pill">
+              <span class="dot pulse" id="cluster-dot"></span>
+              <span id="cluster-health-label">Cluster Healthy</span>
+            </div>
+            <div class="pill">
+              <span class="dot" id="deployment-dot"></span>
+              <span id="deployment-status-label">No Active Deployment</span>
+            </div>
+            <div class="pill">Notifications <strong id="alert-count">0</strong></div>
+            <div class="avatar">AN</div>
+          </div>
+        </header>
+
+        <section id="dashboard" class="cards">
+          <article class="card metric">
+            <h3>Active Deployments</h3>
+            <p id="metric-active-deployments">0</p>
+          </article>
+          <article class="card metric">
+            <h3>Running Pods</h3>
+            <p id="metric-running-pods">0</p>
+          </article>
+          <article class="card metric">
+            <h3>Healthy Services</h3>
+            <p id="metric-healthy-services">0</p>
+          </article>
+          <article class="card metric">
+            <h3>Infrastructure Health</h3>
+            <p id="metric-infra-health">Healthy</p>
+          </article>
+          <article class="card metric">
+            <h3>CPU Usage</h3>
+            <p id="metric-cpu">0%</p>
+          </article>
+          <article class="card metric">
+            <h3>Memory Usage</h3>
+            <p id="metric-memory">0%</p>
+          </article>
+          <article class="card metric">
+            <h3>Deployment Frequency</h3>
+            <p id="metric-frequency">0/day</p>
+          </article>
+          <article class="card metric">
+            <h3>Recovery Metrics</h3>
+            <p id="metric-recovery">0 events</p>
+          </article>
+        </section>
+
+        <section id="deployments" class="panel-grid">
+          <article class="card panel">
+            <h3>Deploy Application</h3>
+            <form id="deploy-form" class="form-grid">
+              <label>
+                Application Name
+                <input type="text" id="app-name" value="self-healing-api" required />
+              </label>
+              <label>
+                GitHub Repository URL
+                <input type="url" id="repo-url" placeholder="https://github.com/your-org/repo" required />
+              </label>
+              <label>
+                Environment
+                <select id="environment">
+                  <option value="development">Development</option>
+                  <option value="staging" selected>Staging</option>
+                  <option value="production">Production</option>
+                </select>
+              </label>
+              <label>
+                Namespace
+                <select id="namespace">
+                  <option value="self-healing-platform" selected>self-healing-platform</option>
+                  <option value="platform-dev">platform-dev</option>
+                  <option value="platform-prod">platform-prod</option>
+                </select>
+              </label>
+              <button type="submit" class="primary-button">Deploy</button>
+            </form>
+          </article>
+
+          <article class="card panel" id="cicd">
+            <h3>Live Deployment Pipeline</h3>
+            <div class="pipeline" id="pipeline-track">
+              <div class="pipeline-stage" data-stage="Build">Build</div>
+              <div class="pipeline-stage" data-stage="Validate">Validate</div>
+              <div class="pipeline-stage" data-stage="Test">Test</div>
+              <div class="pipeline-stage" data-stage="Deploy">Deploy</div>
+              <div class="pipeline-stage" data-stage="Health Check">Health Check</div>
+              <div class="pipeline-stage" data-stage="Running">Running</div>
+            </div>
+            <div class="pipeline-meta">
+              <p><strong>Deployment ID:</strong> <span id="pipeline-deployment-id">N/A</span></p>
+              <p><strong>Current Stage:</strong> <span id="pipeline-current-stage">Idle</span></p>
+              <p><strong>Progress:</strong> <span id="pipeline-progress">0%</span></p>
+            </div>
+          </article>
+        </section>
+
+        <section id="kubernetes" class="panel-grid">
+          <article class="card panel table-panel">
+            <h3>Kubernetes Pods</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Pod Name</th>
+                  <th>Status</th>
+                  <th>Restarts</th>
+                  <th>CPU</th>
+                  <th>Memory</th>
+                  <th>Uptime</th>
+                </tr>
+              </thead>
+              <tbody id="pod-table-body"></tbody>
+            </table>
+          </article>
+
+          <article class="card panel" id="infrastructure">
+            <h3>Infrastructure Health</h3>
+            <div class="infra-grid">
+              <div>
+                <span>Cluster</span>
+                <strong id="infra-cluster-health">Healthy</strong>
+              </div>
+              <div>
+                <span>Region</span>
+                <strong id="infra-region">ap-south-1</strong>
+              </div>
+              <div>
+                <span>Namespace</span>
+                <strong id="infra-namespace">self-healing-platform</strong>
+              </div>
+              <div>
+                <span>Node Health</span>
+                <strong id="infra-node-health">Ready</strong>
+              </div>
+              <div>
+                <span>Mean Recovery Time</span>
+                <strong id="infra-mrt">0.00s</strong>
+              </div>
+              <div>
+                <span>Recovery Success Rate</span>
+                <strong id="infra-success-rate">100%</strong>
+              </div>
+            </div>
+            <button id="crash-button" class="danger-button">Trigger Crash Simulation</button>
+          </article>
+        </section>
+
+        <section id="monitoring" class="panel-grid charts-grid">
+          <article class="card panel">
+            <h3>CPU Usage Trend</h3>
+            <canvas id="cpuChart"></canvas>
+          </article>
+          <article class="card panel">
+            <h3>Memory Usage Trend</h3>
+            <canvas id="memoryChart"></canvas>
+          </article>
+          <article class="card panel">
+            <h3>Deployment History</h3>
+            <canvas id="deploymentChart"></canvas>
+          </article>
+          <article class="card panel">
+            <h3>Restart Trend</h3>
+            <canvas id="restartChart"></canvas>
+          </article>
+        </section>
+
+        <section id="logs" class="panel-grid">
+          <article class="card panel">
+            <h3>Live Logs</h3>
+            <pre id="logs-stream"></pre>
+          </article>
+          <article class="card panel" id="settings">
+            <h3>Settings</h3>
+            <ul class="settings-list">
+              <li><span>Service</span><strong>{{ app_name }}</strong></li>
+              <li><span>Version</span><strong>{{ app_version }}</strong></li>
+              <li><span>Environment</span><strong>{{ app_env }}</strong></li>
+              <li><span>Dashboard Mode</span><strong>Production Simulation</strong></li>
+            </ul>
+          </article>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

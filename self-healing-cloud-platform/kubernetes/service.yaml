@@ -1,0 +1,18 @@
+---
+# ClusterIP service exposes Flask pods internally to the cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: self-healing-api-service
+  namespace: self-healing-platform
+  labels:
+    app.kubernetes.io/name: self-healing-api
+    app.kubernetes.io/component: service
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: self-healing-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000

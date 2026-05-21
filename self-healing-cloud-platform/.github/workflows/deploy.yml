@@ -1,0 +1,89 @@
+---
+name: Self-Healing Platform CI/CD
+
+"on":
+  # Pipeline runs automatically on every push to main.
+  push:
+    branches:
+      - main
+  # Manual execution support for demos and interviews.
+  workflow_dispatch:
+
+jobs:
+  validate-and-simulate-deploy:
+    name: Validate Code, Infra, and Deployment Flow
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Pull repository source code.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Prepare Python runtime for Flask validation.
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Step 3: Install runtime and developer tooling dependencies.
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      # Step 4: Run lightweight Python quality gates.
+      - name: Run Flask code checks
+        run: |
+          flake8 app --max-line-length=120
+          python -m py_compile app/app.py app/config.py
+
+      # Step 5: Validate app starts and serves health endpoint.
+      - name: Run Flask smoke test
+        run: |
+          cd app
+          python app.py &
+          APP_PID=$!
+          sleep 3
+          curl --fail --silent --show-error http://127.0.0.1:5000/health
+          curl --fail --silent --show-error http://127.0.0.1:5000/deployment-status
+          curl --fail --silent --show-error http://127.0.0.1:5000/pods
+          kill "$APP_PID"
+          wait "$APP_PID" || true
+
+      # Step 6: Validate Kubernetes YAML syntax and schema.
+      - name: Validate Kubernetes manifests
+        run: |
+          yamllint kubernetes
+          KUBECONFORM_VERSION="v0.6.7"
+          curl -sSL -o kubeconform.tar.gz \
+            "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          tar -xzf kubeconform.tar.gz kubeconform
+          sudo mv kubeconform /usr/local/bin/kubeconform
+          kubeconform -strict -summary kubernetes/*.yaml
+
+      # Step 7: Setup Terraform and validate IaC definitions.
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Validate Terraform configuration
+        working-directory: terraform
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false
+          terraform validate
+
+      # Step 8: Simulate deployment actions without touching real infra.
+      - name: Simulate deployment workflow
+        run: |
+          echo "[SIMULATION] Build application image in Minikube runtime"
+          echo "minikube image build -t self-healing-api:2.0.0 ."
+          echo "[SIMULATION] Apply Kubernetes manifests"
+          echo "kubectl apply -f kubernetes/namespace.yaml"
+          echo "kubectl apply -f kubernetes/deployment.yaml"
+          echo "kubectl apply -f kubernetes/service.yaml"
+          echo "kubectl apply -f kubernetes/ingress.yaml"
+          echo "[SIMULATION] Verify rollout"
+          echo "kubectl rollout status deployment/self-healing-api -n self-healing-platform"

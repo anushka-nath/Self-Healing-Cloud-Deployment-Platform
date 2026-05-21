@@ -1,0 +1,43 @@
+# Python virtual environments.
+.venv/
+venv/
+env/
+
+# Python bytecode and cache files.
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Test and coverage outputs.
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# IDE and editor metadata.
+.vscode/
+.idea/
+*.swp
+
+# OS noise files.
+.DS_Store
+Thumbs.db
+
+# Local environment files.
+.env
+.env.*
+
+# Terraform state and cache.
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+*.tfvars.json
+crash.log
+
+# Minikube and local build artifacts.
+*.tar.gz
+tmp/

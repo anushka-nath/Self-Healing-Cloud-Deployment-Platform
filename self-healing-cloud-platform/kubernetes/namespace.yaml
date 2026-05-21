@@ -1,0 +1,9 @@
+---
+# Dedicated namespace keeps platform resources isolated from other workloads.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: self-healing-platform
+  labels:
+    app.kubernetes.io/name: self-healing-cloud-platform
+    app.kubernetes.io/part-of: self-healing-platform

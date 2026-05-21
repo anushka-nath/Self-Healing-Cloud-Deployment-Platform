@@ -1,0 +1,8 @@
+# Python linting and code-quality tooling.
+flake8==7.1.2
+
+# YAML linting for Kubernetes and monitoring manifests.
+yamllint==1.37.1
+
+# Optional testing framework for future extension.
+pytest==8.3.5
