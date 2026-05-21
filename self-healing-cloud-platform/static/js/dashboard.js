@@ -357,18 +357,179 @@
     });
   }
 
+  // AWS Infrastructure Functions
+  async function refreshAWS() {
+    try {
+      const data = await apiGet("/aws/infrastructure");
+      const infra = data.infrastructure || {};
+      
+      setText("aws-ec2-count", String(infra.ec2_instances?.running || 0));
+      setText("aws-eks-status", infra.eks_cluster?.status || "UNKNOWN");
+      setText("aws-s3-count", String(infra.s3_buckets?.count || 0));
+      setText("aws-iam-count", String(Object.keys(infra.iam_roles || {}).length));
+      setText("aws-sns-count", String(infra.sns_topics?.count || 0));
+      
+      const ec2Body = document.getElementById("ec2-table-body");
+      if (ec2Body && infra.ec2_instances?.instances) {
+        const rows = infra.ec2_instances.instances
+          .map(inst => `<tr>
+            <td>${inst.id}</td>
+            <td>${inst.type}</td>
+            <td><span class="status-${inst.state}">${inst.state}</span></td>
+            <td>${inst.cpu_percent}%</td>
+          </tr>`)
+          .join("");
+        ec2Body.innerHTML = rows;
+      }
+    } catch (error) {
+      console.error("refreshAWS failed:", error);
+    }
+  }
+
+  // Helm Functions
+  async function refreshHelmReleases() {
+    try {
+      const data = await apiGet("/helm/releases");
+      const helmBody = document.getElementById("helm-releases-body");
+      if (helmBody && data.releases) {
+        const rows = data.releases
+          .map(release => `<tr>
+            <td>${release.name}</td>
+            <td>${release.chart}</td>
+            <td>${release.namespace}</td>
+            <td><span class="status-${release.status}">${release.status}</span></td>
+            <td>${release.version}</td>
+          </tr>`)
+          .join("");
+        helmBody.innerHTML = rows;
+      }
+    } catch (error) {
+      console.error("refreshHelmReleases failed:", error);
+    }
+  }
+
+  function bindHelmForm() {
+    const form = document.getElementById("helm-deploy-form");
+    if (!form) return;
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submitButton = form.querySelector("button[type='submit']");
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Deploying...";
+      }
+
+      try {
+        const payload = {
+          chart_name: document.getElementById("helm-chart-name").value,
+          release_name: document.getElementById("helm-release-name").value,
+          namespace: document.getElementById("helm-namespace").value,
+        };
+        await apiPost("/helm/deploy", payload);
+        await refreshHelmReleases();
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = "Deploy Helm Chart";
+        }
+      }
+    });
+  }
+
+  // Terraform Functions
+  async function refreshTerraform() {
+    try {
+      const data = await apiGet("/terraform/state");
+      const tf = data.terraform || {};
+      
+      setText("tf-backend", "S3");
+      setText("tf-vpc", tf.resources?.vpc?.status || "unknown");
+      setText("tf-subnets", String(tf.resources?.subnets?.length || 0));
+      setText("tf-sgs", String(tf.resources?.security_groups?.length || 0));
+      setText("tf-eks", tf.resources?.eks_cluster?.name ? "deployed" : "pending");
+      setText("tf-iam", String(tf.resources?.iam_roles || 0));
+      
+      const outputPre = document.getElementById("terraform-output");
+      if (outputPre && tf.outputs) {
+        const lines = Object.entries(tf.outputs)
+          .map(([key, value]) => `${key} = ${JSON.stringify(value)}`)
+          .join("\n");
+        outputPre.textContent = lines;
+      }
+    } catch (error) {
+      console.error("refreshTerraform failed:", error);
+    }
+  }
+
+  // Events Functions
+  async function refreshEvents() {
+    try {
+      const data = await apiGet("/events");
+      const eventsList = document.getElementById("events-list");
+      const timeline = document.getElementById("event-timeline");
+      
+      if (eventsList && data.events) {
+        const items = data.events
+          .map(event => {
+            const time = new Date(event.timestamp).toLocaleTimeString();
+            const severityClass = `severity-${event.severity}`;
+            return `<div style="padding: 8px; margin: 4px 0; border-left: 3px solid var(--${event.severity}); border-radius: 4px; background: rgba(0,0,0,0.2);">
+              <span style="font-size: 0.85rem; color: var(--text-muted);">${time}</span>
+              <span class="${severityClass}">[${event.type.toUpperCase()}]</span>
+              ${event.message}
+            </div>`;
+          })
+          .join("");
+        eventsList.innerHTML = items;
+      }
+
+      if (timeline && data.events) {
+        const timelineItems = data.events
+          .map(event => {
+            const time = new Date(event.timestamp).toLocaleTimeString();
+            return `<div style="margin-bottom: 12px; padding-left: 20px; border-left: 2px solid var(--accent); position: relative;">
+              <div style="position: absolute; left: -7px; top: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent);"></div>
+              <strong>${time}</strong> - ${event.message}
+            </div>`;
+          })
+          .join("");
+        timeline.innerHTML = timelineItems;
+      }
+    } catch (error) {
+      console.error("refreshEvents failed:", error);
+    }
+  }
+
   async function bootstrap() {
     initializeCharts();
     bindDeployForm();
     bindCrashButton();
+    bindHelmForm();
 
-    await Promise.all([refreshStatus(), refreshPods(), refreshInfrastructure(), refreshLogs(), refreshHistory()]);
+    await Promise.all([
+      refreshStatus(),
+      refreshPods(),
+      refreshInfrastructure(),
+      refreshLogs(),
+      refreshHistory(),
+      refreshAWS(),
+      refreshHelmReleases(),
+      refreshTerraform(),
+      refreshEvents(),
+    ]);
 
     setInterval(refreshStatus, REFRESH_STATUS_MS);
     setInterval(refreshPods, REFRESH_PODS_MS);
     setInterval(refreshLogs, REFRESH_LOGS_MS);
     setInterval(refreshInfrastructure, REFRESH_STATUS_MS);
     setInterval(refreshHistory, REFRESH_HISTORY_MS);
+    setInterval(refreshAWS, 8000);
+    setInterval(refreshHelmReleases, 10000);
+    setInterval(refreshTerraform, 12000);
+    setInterval(refreshEvents, 6000);
   }
 
   document.addEventListener("DOMContentLoaded", bootstrap);

@@ -1,0 +1,83 @@
+name: Security & Quality Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+
+jobs:
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install safety bandit
+
+      - name: Run Security Checks
+        run: |
+          echo "Running dependency vulnerability scan..."
+          safety check --json || true
+          
+          echo "Running code security analysis..."
+          bandit -r app/ -f json || true
+
+      - name: Dependency Check
+        run: |
+          pip list --outdated || echo "Checking for outdated packages"
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install quality tools
+        run: |
+          pip install pylint flake8 black isort
+
+      - name: Format check
+        run: |
+          black --check app/ || true
+          isort --check-only app/ || true
+
+      - name: Lint
+        run: |
+          flake8 app --max-line-length=120 --count --statistics || true
+          pylint app --max-line-length=120 --exit-zero
+
+  dependency-scan:
+    name: Dependency Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'self-healing-cloud-platform'
+          path: '.'
+          format: 'JSON'

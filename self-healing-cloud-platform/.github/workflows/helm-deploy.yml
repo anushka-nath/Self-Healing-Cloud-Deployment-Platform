@@ -1,0 +1,56 @@
+name: Helm Deployment
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'helm/**'
+      - '.github/workflows/helm-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Helm action'
+        required: true
+        default: 'upgrade'
+        type: choice
+        options:
+          - upgrade
+          - rollback
+          - delete
+
+jobs:
+  helm-deploy:
+    name: Deploy with Helm
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: '3.13.0'
+
+      - name: Lint Helm chart
+        run: |
+          helm lint helm/self-healing-api
+          helm template helm/self-healing-api --debug
+
+      - name: Validate Helm chart
+        run: |
+          helm chart lint helm/self-healing-api
+          helm template self-healing-api helm/self-healing-api -n self-healing-platform --create-namespace
+
+      - name: Build Helm package
+        run: |
+          helm package helm/self-healing-api --destination ./helm-releases/
+
+      - name: Display Helm deployment info
+        run: |
+          echo "Helm Release: self-healing-api"
+          echo "Chart Version: 1.2.3"
+          echo "Target Namespace: self-healing-platform"
+          echo "Values will be applied from: helm/values.yaml"
+          helm show values helm/self-healing-api

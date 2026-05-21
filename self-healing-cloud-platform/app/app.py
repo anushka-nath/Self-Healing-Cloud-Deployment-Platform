@@ -708,6 +708,12 @@ def create_app() -> Flask:
                     "/pods",
                     "/logs",
                     "/infrastructure",
+                    "/aws/infrastructure",
+                    "/helm/releases",
+                    "/helm/deploy",
+                    "/events",
+                    "/terraform/state",
+                    "/observability/metrics",
                     "/health",
                     "/metrics",
                     "/crash",
@@ -832,6 +838,209 @@ def create_app() -> Flask:
         result = simulator.simulate_crash()
         app.logger.warning("simulated_pod_crash_triggered", extra={"pod_name": result["pod_name"]})
         return jsonify(result), 202
+
+    # AWS Infrastructure Simulation
+    @app.route("/aws/infrastructure", methods=["GET"])
+    def aws_infrastructure():
+        """Simulates AWS infrastructure resources."""
+        return jsonify({
+            "status": "ok",
+            "region": "ap-south-1",
+            "infrastructure": {
+                "ec2_instances": {
+                    "running": 4,
+                    "stopped": 1,
+                    "instances": [
+                        {"id": "i-0a1b2c3d4e5f6g7h8", "type": "t2.micro", "state": "running", "cpu_percent": 22},
+                        {"id": "i-0b2c3d4e5f6g7h8i9", "type": "t2.small", "state": "running", "cpu_percent": 35},
+                        {"id": "i-0c3d4e5f6g7h8i9j0", "type": "t2.micro", "state": "running", "cpu_percent": 18},
+                        {"id": "i-0d4e5f6g7h8i9j0k1", "type": "t2.micro", "state": "running", "cpu_percent": 28},
+                        {"id": "i-0e5f6g7h8i9j0k1l2", "type": "t2.micro", "state": "stopped", "cpu_percent": 0},
+                    ]
+                },
+                "eks_cluster": {
+                    "name": "self-healing-cluster",
+                    "status": "ACTIVE",
+                    "node_count": 3,
+                    "version": "1.27",
+                    "endpoint": "https://ABC123DEF456.eks.ap-south-1.amazonaws.com"
+                },
+                "iam_roles": {
+                    "eks_service_role": {"arn": "arn:aws:iam::123456789012:role/eks-service-role", "status": "active"},
+                    "node_role": {"arn": "arn:aws:iam::123456789012:role/NodeInstanceRole", "status": "active"},
+                    "lambda_role": {"arn": "arn:aws:iam::123456789012:role/lambda-execution-role", "status": "active"},
+                },
+                "s3_buckets": {
+                    "count": 2,
+                    "buckets": [
+                        {"name": "self-healing-deployments", "size_gb": 45.2, "objects": 3421},
+                        {"name": "self-healing-logs", "size_gb": 128.5, "objects": 156892},
+                    ]
+                },
+                "sns_topics": {
+                    "count": 3,
+                    "topics": [
+                        {"name": "deployment-alerts", "subscriptions": 5},
+                        {"name": "pod-failures", "subscriptions": 3},
+                        {"name": "health-checks", "subscriptions": 2},
+                    ]
+                },
+                "sqs_queues": {
+                    "count": 2,
+                    "queues": [
+                        {"name": "deployment-tasks", "messages": 12, "dlq_messages": 0},
+                        {"name": "event-stream", "messages": 345, "dlq_messages": 2},
+                    ]
+                }
+            },
+            "timestamp": utc_now_iso(),
+        })
+
+    # Helm Deployment Management
+    @app.route("/helm/releases", methods=["GET"])
+    def helm_releases():
+        """Lists Helm releases deployed in the cluster."""
+        return jsonify({
+            "status": "ok",
+            "releases": [
+                {
+                    "name": "self-healing-api",
+                    "namespace": "self-healing-platform",
+                    "chart": "self-healing-api",
+                    "version": "1.2.3",
+                    "app_version": "v1.2.3",
+                    "status": "deployed",
+                    "created_at": "2024-05-15T10:30:00Z",
+                    "updated_at": "2024-05-21T14:22:00Z",
+                },
+                {
+                    "name": "prometheus",
+                    "namespace": "monitoring",
+                    "chart": "kube-prometheus-stack",
+                    "version": "54.0.0",
+                    "app_version": "v0.68.0",
+                    "status": "deployed",
+                    "created_at": "2024-05-01T08:15:00Z",
+                    "updated_at": "2024-05-20T10:00:00Z",
+                },
+                {
+                    "name": "ingress-nginx",
+                    "namespace": "ingress-nginx",
+                    "chart": "ingress-nginx",
+                    "version": "4.9.1",
+                    "app_version": "1.9.3",
+                    "status": "deployed",
+                    "created_at": "2024-04-20T09:00:00Z",
+                    "updated_at": "2024-05-21T11:45:00Z",
+                }
+            ],
+            "timestamp": utc_now_iso(),
+        })
+
+    @app.route("/helm/deploy", methods=["POST"])
+    def helm_deploy():
+        """Simulates Helm chart deployment."""
+        payload = request.get_json(silent=True) or {}
+        chart_name = str(payload.get("chart_name", "")).strip()
+        release_name = str(payload.get("release_name", "")).strip()
+        namespace = str(payload.get("namespace", "default")).strip()
+
+        if not chart_name or not release_name:
+            return jsonify({"status": "error", "message": "chart_name and release_name required"}), 400
+
+        simulator._append_log("INFO", f"Helm deploy: {chart_name} -> {release_name}", component="helm")
+        
+        return jsonify({
+            "status": "deploying",
+            "chart": chart_name,
+            "release": release_name,
+            "namespace": namespace,
+            "message": f"Deploying Helm chart {chart_name} as {release_name}",
+            "timestamp": utc_now_iso(),
+        }), 202
+
+    # Event-Driven Architecture
+    @app.route("/events", methods=["GET"])
+    def get_events():
+        """Returns recent infrastructure and deployment events."""
+        events = [
+            {"timestamp": utc_now_iso(), "type": "deployment", "severity": "info", "message": "Deployment pipeline started"},
+            {"timestamp": utc_now_iso(), "type": "pod", "severity": "info", "message": "Pod self-healing-api-7f9a1-0 initialized"},
+            {"timestamp": utc_now_iso(), "type": "health", "severity": "info", "message": "Health check passed for all replicas"},
+            {"timestamp": utc_now_iso(), "type": "scaling", "severity": "info", "message": "HPA: Scaled to 3 replicas (CPU: 75%)"},
+            {"timestamp": utc_now_iso(), "type": "monitoring", "severity": "warning", "message": "Memory usage above 80% threshold"},
+        ]
+        return jsonify({
+            "status": "ok",
+            "events": events,
+            "total": len(events),
+            "timestamp": utc_now_iso(),
+        })
+
+    # Terraform State & IaC
+    @app.route("/terraform/state", methods=["GET"])
+    def terraform_state():
+        """Returns Terraform infrastructure state."""
+        return jsonify({
+            "status": "ok",
+            "terraform": {
+                "version": "1.5.7",
+                "backend": "s3://self-healing-terraform-state",
+                "resources": {
+                    "vpc": {"name": "self-healing-vpc", "cidr": "10.0.0.0/16", "status": "created"},
+                    "subnets": [
+                        {"name": "public-subnet-1", "cidr": "10.0.1.0/24", "az": "ap-south-1a"},
+                        {"name": "private-subnet-1", "cidr": "10.0.10.0/24", "az": "ap-south-1a"},
+                    ],
+                    "security_groups": [
+                        {"name": "eks-cluster-sg", "rules": 8},
+                        {"name": "node-sg", "rules": 12},
+                    ],
+                    "eks_cluster": {"name": "self-healing-cluster", "version": "1.27"},
+                    "iam_roles": 3,
+                },
+                "outputs": {
+                    "vpc_id": "vpc-0a1b2c3d4e5f6g7h8",
+                    "eks_cluster_endpoint": "https://ABC123DEF456.eks.ap-south-1.amazonaws.com",
+                    "eks_cluster_security_group": "sg-0x1y2z3a4b5c6d7e8",
+                }
+            },
+            "timestamp": utc_now_iso(),
+        })
+
+    # Monitoring & Observability
+    @app.route("/observability/metrics", methods=["GET"])
+    def observability_metrics():
+        """Returns detailed observability metrics."""
+        with simulator._lock:
+            cpu = simulator._cpu_usage_percent()
+            memory = simulator._memory_usage_percent()
+        
+        return jsonify({
+            "status": "ok",
+            "metrics": {
+                "system": {
+                    "cpu_usage_percent": cpu,
+                    "memory_usage_percent": memory,
+                    "disk_usage_percent": 42.5,
+                    "network_in_mbps": 125.3,
+                    "network_out_mbps": 98.7,
+                },
+                "application": {
+                    "request_rate_per_sec": 145,
+                    "error_rate_percent": 0.2,
+                    "p95_latency_ms": 285,
+                    "p99_latency_ms": 450,
+                },
+                "kubernetes": {
+                    "pod_count": len(simulator._pods),
+                    "running_pods": len([p for p in simulator._pods if p["status"] == "Running"]),
+                    "restart_count": simulator._pod_restarts_total,
+                    "node_count": len(simulator._nodes),
+                },
+            },
+            "timestamp": utc_now_iso(),
+        })
 
     @atexit.register
     def on_shutdown() -> None:

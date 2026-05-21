@@ -1,0 +1,22 @@
+apiVersion: v2
+name: self-healing-api
+description: A Helm chart for the Self-Healing Cloud Deployment Platform
+type: application
+version: 1.2.3
+appVersion: "1.2.3"
+
+keywords:
+  - self-healing
+  - deployment
+  - kubernetes
+  - devops
+
+maintainers:
+  - name: DevOps Team
+    email: devops@example.com
+
+home: https://github.com/anushka-nath/Self-Healing-Cloud-Deployment-Platform
+sources:
+  - https://github.com/anushka-nath/Self-Healing-Cloud-Deployment-Platform
+
+dependencies: []

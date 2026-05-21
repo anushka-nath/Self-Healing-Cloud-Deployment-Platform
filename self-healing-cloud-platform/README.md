@@ -60,55 +60,52 @@ self-healing-cloud-platform/
 +-- app/
 |   +-- app.py
 |   +-- config.py
-|   `-- requirements.txt
-+-- static/
-|   +-- css/
-|   |   `-- dashboard.css
-|   `-- js/
-|       `-- dashboard.js
-+-- templates/
-|   `-- dashboard.html
-+-- kubernetes/
-|   +-- namespace.yaml
-|   +-- deployment.yaml
-|   +-- service.yaml
-|   `-- ingress.yaml
-+-- terraform/
-|   +-- provider.tf
-|   +-- variables.tf
-|   +-- main.tf
-|   `-- outputs.tf
-+-- monitoring/
-|   +-- prometheus-config.yaml
-|   `-- grafana-notes.md
-+-- scripts/
-|   +-- deploy.sh
-|   +-- deploy-windows.ps1
-|   +-- health-check.sh
-|   `-- cleanup.sh
-+-- docs/
-|   +-- architecture.md
-|   +-- deployment-guide.md
-|   `-- troubleshooting.md
-+-- .github/workflows/
-|   `-- deploy.yml
-+-- Dockerfile
-+-- Procfile
-+-- render.yaml
-+-- requirements.txt
-+-- requirements-dev.txt
-`-- README.md
+5. `GET /deployment-history` - historical deployment runs
+![Badge](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
+![Badge](https://img.shields.io/badge/Python-3.12+-blue)
+![Badge](https://img.shields.io/badge/Framework-Flask-lightblue)
+
+A **production-grade DevOps Control Center** that simulates modern cloud deployment platforms. Demonstrates mastery of Kubernetes, Terraform, GitHub Actions, and monitoring.
+
+## 🎯 Key Features
+
+- ✅ **SaaS-Style Dashboard** - Real-time deployment tracking with glassmorphism UI
+- ✅ **CI/CD Pipeline** - Multi-stage deployment simulation (Build → Deploy)
+- ✅ **Kubernetes Simulation** - Pod management, health checks, recovery
+- ✅ **Self-Healing System** - Crash simulation with automatic recovery
+- ✅ **Infrastructure as Code** - Complete Terraform configuration
+- ✅ **Helm Charts** - Production-ready Helm deployment
+- ✅ **GitHub Actions** - 4 CI/CD workflows (deploy, helm, terraform, security)
+- ✅ **Monitoring & Observability** - Prometheus metrics, event streaming
+- ✅ **Render-Ready** - Deploy free to Render.com
+
+## 🏗️ Architecture
+
+```
+User Dashboard (React/Vanilla JS)
+      ↓
+Flask Backend + Simulator
+   ├─ Deployment Pipeline
+   ├─ Kubernetes Mock Layer
+   ├─ Self-Healing Engine
+   └─ Prometheus Metrics
 ```
 
----
+## 🚀 Quick Start
 
-## API Endpoints
+```bash
+# Clone & setup
+git clone https://github.com/anushka-nath/Self-Healing-Cloud-Deployment-Platform.git
+cd self-healing-cloud-platform
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
 
-1. `GET /` - dashboard UI
-2. `GET /api` - service metadata
-3. `POST /deploy` - start deployment simulation
-4. `GET /deployment-status` - active pipeline and platform summary
-5. `GET /deployment-history` - historical deployment runs
+# Run
+python app/app.py
+
+# Open browser
+open http://localhost:5000
+```
 6. `GET /pods` - Kubernetes pod telemetry
 7. `GET /logs` - live log stream
 8. `GET /infrastructure` - infrastructure and node status

@@ -24,6 +24,10 @@
           <a href="#kubernetes">Kubernetes</a>
           <a href="#monitoring">Monitoring</a>
           <a href="#infrastructure">Infrastructure</a>
+          <a href="#infrastructure-aws">AWS</a>
+          <a href="#helm-deployments">Helm</a>
+          <a href="#terraform-section">Terraform</a>
+          <a href="#events-section">Events</a>
           <a href="#cicd">CI/CD</a>
           <a href="#logs">Logs</a>
           <a href="#settings">Settings</a>
@@ -201,6 +205,126 @@
           <article class="card panel">
             <h3>Restart Trend</h3>
             <canvas id="restartChart"></canvas>
+          </article>
+        </section>
+
+        <!-- AWS INFRASTRUCTURE SECTION -->
+        <section id="infrastructure-aws" class="panel-grid">
+          <article class="card panel">
+            <h3>AWS Infrastructure</h3>
+            <div class="infra-grid">
+              <div><span>EC2 Running</span><strong id="aws-ec2-count">4</strong></div>
+              <div><span>EKS Cluster</span><strong id="aws-eks-status">ACTIVE</strong></div>
+              <div><span>S3 Buckets</span><strong id="aws-s3-count">2</strong></div>
+              <div><span>IAM Roles</span><strong id="aws-iam-count">3</strong></div>
+              <div><span>Region</span><strong>ap-south-1</strong></div>
+              <div><span>SNS Topics</span><strong id="aws-sns-count">3</strong></div>
+            </div>
+          </article>
+
+          <article class="card panel table-panel">
+            <h3>EC2 Instances</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Instance ID</th>
+                  <th>Type</th>
+                  <th>State</th>
+                  <th>CPU %</th>
+                </tr>
+              </thead>
+              <tbody id="ec2-table-body"></tbody>
+            </table>
+          </article>
+        </section>
+
+        <!-- HELM DEPLOYMENTS SECTION -->
+        <section id="helm-deployments" class="panel-grid">
+          <article class="card panel">
+            <h3>Helm Releases</h3>
+            <form id="helm-deploy-form" class="form-grid">
+              <label>
+                Chart Name
+                <input type="text" id="helm-chart-name" placeholder="self-healing-api" required />
+              </label>
+              <label>
+                Release Name
+                <input type="text" id="helm-release-name" placeholder="my-release" required />
+              </label>
+              <label>
+                Namespace
+                <input type="text" id="helm-namespace" value="self-healing-platform" required />
+              </label>
+              <button type="submit" class="primary-button">Deploy Helm Chart</button>
+            </form>
+          </article>
+
+          <article class="card panel table-panel">
+            <h3>Deployed Releases</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Release</th>
+                  <th>Chart</th>
+                  <th>Namespace</th>
+                  <th>Status</th>
+                  <th>Version</th>
+                </tr>
+              </thead>
+              <tbody id="helm-releases-body"></tbody>
+            </table>
+          </article>
+        </section>
+
+        <!-- TERRAFORM INFRASTRUCTURE SECTION -->
+        <section id="terraform-section" class="panel-grid">
+          <article class="card panel">
+            <h3>Terraform State</h3>
+            <div class="infra-grid">
+              <div><span>Backend</span><strong id="tf-backend">S3</strong></div>
+              <div><span>VPC</span><strong id="tf-vpc">created</strong></div>
+              <div><span>Subnets</span><strong id="tf-subnets">2</strong></div>
+              <div><span>Security Groups</span><strong id="tf-sgs">2</strong></div>
+              <div><span>EKS Cluster</span><strong id="tf-eks">deployed</strong></div>
+              <div><span>IAM Roles</span><strong id="tf-iam">3</strong></div>
+            </div>
+            <pre id="terraform-output" style="margin-top: 12px; font-size: 0.85rem; max-height: 200px; overflow-y: auto;"></pre>
+          </article>
+
+          <article class="card panel">
+            <h3>Infrastructure Diagram</h3>
+            <div style="padding: 16px; background: rgba(80, 130, 255, 0.08); border-radius: 8px; font-size: 0.9rem; line-height: 1.6; font-family: monospace;">
+              VPC (10.0.0.0/16)<br/>
+              ├── Public Subnets<br/>
+              │   ├── 10.0.1.0/24 (ap-south-1a)<br/>
+              │   └── ALB<br/>
+              ├── Private Subnets<br/>
+              │   ├── 10.0.10.0/24 (ap-south-1a)<br/>
+              │   └── EKS Cluster<br/>
+              │       ├── Node 1<br/>
+              │       ├── Node 2<br/>
+              │       └── Node 3<br/>
+              └── Security Groups<br/>
+                  ├── eks-cluster-sg<br/>
+                  └── node-sg
+            </div>
+          </article>
+        </section>
+
+        <!-- EVENTS & EVENT STREAM SECTION -->
+        <section id="events-section" class="panel-grid">
+          <article class="card panel">
+            <h3>Infrastructure Events</h3>
+            <div id="events-list" style="max-height: 300px; overflow-y: auto;">
+              <!-- Events populated by JS -->
+            </div>
+          </article>
+
+          <article class="card panel">
+            <h3>Event Timeline</h3>
+            <div id="event-timeline" style="padding: 12px; font-size: 0.9rem; line-height: 1.8;">
+              <!-- Timeline events populated by JS -->
+            </div>
           </article>
         </section>
 

@@ -363,6 +363,42 @@ th {
   color: var(--danger);
 }
 
+.status-deployed {
+  color: var(--success);
+}
+
+.status-stopped {
+  color: var(--text-muted);
+}
+
+.status-degraded {
+  color: var(--warning);
+}
+
+.status-pending {
+  color: var(--accent);
+}
+
+.severity-info {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.severity-warning {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.severity-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.severity-critical {
+  color: var(--danger);
+  font-weight: 700;
+}
+
 .infra-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
